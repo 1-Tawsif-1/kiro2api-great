@@ -213,12 +213,21 @@ async def index_code_impl(request: IndexRequest):
         projects[project_id]["blob_count"] += indexed_count
         projects[project_id]["last_indexed"] = datetime.utcnow().isoformat()
         
+        # Generate blob_names (SHA-256 hashes) for acemcp client compatibility
+        blob_names = []
+        for blob in request.blobs:
+            file_path = blob.get_file_path
+            # Calculate blob hash similar to acemcp's calculate_blob_name
+            blob_hash = hashlib.md5(f"{project_id}:{file_path}".encode()).hexdigest()
+            blob_names.append(blob_hash)
+        
         return {
             "status": "success",
             "project_id": project_id,
             "batch_id": request.batch_id,
             "indexed_count": indexed_count,
-            "total_blobs": projects[project_id]["blob_count"]
+            "total_blobs": projects[project_id]["blob_count"],
+            "blob_names": blob_names  # Required by acemcp client
         }
     
     except Exception as e:
