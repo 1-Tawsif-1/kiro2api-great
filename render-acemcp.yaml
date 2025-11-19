@@ -1,20 +1,19 @@
-# Render configuration for Ace MCP API
-# This file defines how to deploy the Ace MCP API server
+# Render configuration for Ace MCP API ONLY
+# This deploys ONLY the Ace MCP API server (NOT kiro2api)
 
 services:
   # Ace MCP API Service
   - type: web
-    name: acemcp-api
+    name: kiro2api-great
     env: python
     region: oregon
     plan: free
     buildCommand: pip install -r acemcp-api/requirements.txt
-    startCommand: cd acemcp-api && python main.py
+    startCommand: cd acemcp-api && uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: ACE_API_TOKEN
         generateValue: true  # Render will generate a secure token
       - key: PYTHON_VERSION
-        value: 3.11
-      - key: PORT
-        value: 10000  # Render's default port
+        value: "3.11"
     healthCheckPath: /health
+    autoDeploy: true

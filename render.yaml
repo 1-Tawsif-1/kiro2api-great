@@ -1,0 +1,13 @@
+# Render Blueprint - Ace MCP API Only
+# Deploys ONLY the Ace MCP indexing API (not kiro2api proxy)
+
+services:
+  - type: web
+    name: kiro2api-great
+    runtime: python
+    plan: free
+    buildCommand: pip install -r acemcp-api/requirements.txt
+    startCommand: cd acemcp-api && uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ACE_API_TOKEN
+        generateValue: true
