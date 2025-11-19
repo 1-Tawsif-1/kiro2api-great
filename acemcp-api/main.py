@@ -102,22 +102,29 @@ async def health():
     }
 
 
+@app.post("/batch-upload")
+async def batch_upload(
+    request: IndexRequest,
+    token: str = Depends(verify_token)
+):
+    """
+    Batch upload endpoint - acemcp client expects this exact endpoint name
+    """
+    return await index_code_impl(request)
+
+
 @app.post("/api/v1/index")
 async def index_code(
     request: IndexRequest,
     token: str = Depends(verify_token)
 ):
     """
-    Index code blobs for a project
-    
-    This endpoint accepts batches of code blobs and stores them
-    for later semantic search. In production, this should:
-    1. Generate embeddings using a model (e.g., sentence-transformers)
-    2. Store in a vector database (e.g., ChromaDB, Pinecone)
-    3. Enable semantic similarity search
-    
-    For now, we're using simple keyword matching for demo purposes.
+    Alternative index endpoint for manual API calls
     """
+    return await index_code_impl(request)
+
+
+async def index_code_impl(request: IndexRequest):
     try:
         project_id = request.project_id
         
