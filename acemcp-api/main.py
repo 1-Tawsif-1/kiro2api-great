@@ -4,16 +4,34 @@ A lightweight semantic search API for code indexing
 Compatible with acemcp MCP client
 """
 
-from fastapi import FastAPI, HTTPException, Depends, Header
+from fastapi import FastAPI, HTTPException, Depends, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ValidationError
 from typing import List, Optional, Dict, Any
 import hashlib
 import time
 from datetime import datetime
 import os
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Ace MCP API", version="1.0.0")
+
+
+@app.exception_handler(ValidationError)
+async def validation_exception_handler(request: Request, exc: ValidationError):
+    """Log and return validation errors"""
+    logger.error(f"Validation error for {request.url}: {exc.errors()}")
+    logger.error(f"Request body: {await request.body()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": str(await request.body())}
+    )
+
 
 # CORS configuration
 app.add_middleware(
@@ -110,13 +128,21 @@ async def health():
 
 @app.post("/batch-upload")
 async def batch_upload(
-    request: IndexRequest,
+    request: Request,
     token: str = Depends(verify_token)
 ):
     """
     Batch upload endpoint - acemcp client expects this exact endpoint name
     """
-    return await index_code_impl(request)
+    try:
+        body = await request.json()
+        logger.info(f"Received batch-upload request: {body}")
+        index_req = IndexRequest(**body)
+        return await index_code_impl(index_req)
+    except ValidationError as e:
+        logger.error(f"Validation error: {e.errors()}")
+        logger.error(f"Request body: {body}")
+        raise HTTPException(status_code=422, detail={"errors": e.errors(), "body_sample": str(body)[:500]})
 
 
 @app.post("/api/v1/index")
