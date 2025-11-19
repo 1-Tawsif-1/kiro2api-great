@@ -70,7 +70,7 @@ class CodeBlob(BaseModel):
 
 class IndexRequest(BaseModel):
     """Request to index code"""
-    project_id: str
+    project_id: Optional[str] = None  # acemcp doesn't send this, we'll infer it
     blobs: List[CodeBlob]
     batch_id: Optional[int] = None
     
@@ -164,7 +164,14 @@ async def index_code(
 
 async def index_code_impl(request: IndexRequest):
     try:
-        project_id = request.project_id
+        # Infer project_id from file paths if not provided
+        if not request.project_id and request.blobs:
+            # Extract common path prefix from first blob as project identifier
+            first_path = request.blobs[0].get_file_path
+            # Use first directory as project name
+            project_id = first_path.split('/')[0] if '/' in first_path else "default"
+        else:
+            project_id = request.project_id or "default"
         
         # Initialize project if not exists
         if project_id not in projects:
