@@ -1,0 +1,20 @@
+# Render configuration for Ace MCP API
+# This file defines how to deploy the Ace MCP API server
+
+services:
+  # Ace MCP API Service
+  - type: web
+    name: acemcp-api
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r acemcp-api/requirements.txt
+    startCommand: cd acemcp-api && python main.py
+    envVars:
+      - key: ACE_API_TOKEN
+        generateValue: true  # Render will generate a secure token
+      - key: PYTHON_VERSION
+        value: 3.11
+      - key: PORT
+        value: 10000  # Render's default port
+    healthCheckPath: /health
