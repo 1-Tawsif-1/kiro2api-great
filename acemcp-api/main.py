@@ -288,7 +288,25 @@ async def codebase_retrieval(
         if results:
             formatted_text = f"Found {len(results)} relevant code snippets:\n\n"
             for i, result in enumerate(results, 1):
-                formatted_text += f"## {i}. {result['file_path']}\n\n```\n{result['content'][:500]}...\n```\n\n"
+                content = result['content']
+                
+                # Clean up content: limit to 300 chars and break at line boundaries
+                if len(content) > 300:
+                    # Find last newline before 300 chars
+                    truncate_pos = content.rfind('\n', 0, 300)
+                    if truncate_pos == -1:
+                        truncate_pos = 300
+                    content = content[:truncate_pos].rstrip()
+                
+                # Remove excessive whitespace while preserving structure
+                lines = content.split('\n')
+                cleaned_lines = [line.rstrip() for line in lines]
+                content = '\n'.join(cleaned_lines)
+                
+                formatted_text += f"{i}. {result['file_path']}\n"
+                formatted_text += f"{'-' * 60}\n"
+                formatted_text += f"{content}\n"
+                formatted_text += f"{'-' * 60}\n\n"
         else:
             formatted_text = "No relevant code found for your query."
         
