@@ -123,12 +123,19 @@ async def root():
 
 
 @app.get("/health")
-async def health():
-    """Health check"""
+async def health(request: Request):
+    """Health check - optimized for UptimeRobot monitoring"""
+    user_agent = request.headers.get("user-agent", "")
+    is_uptimerobot = "uptimerobot" in user_agent.lower()
+    
+    if is_uptimerobot:
+        logger.info(f"⏰ UptimeRobot ping received at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
+    
     return {
         "status": "healthy",
         "indexed_projects": len(projects),
-        "total_blobs": len(code_index)
+        "total_blobs": len(code_index),
+        "timestamp": datetime.utcnow().isoformat()
     }
 
 
@@ -284,31 +291,28 @@ async def codebase_retrieval(
         results.sort(key=lambda x: x["score"], reverse=True)
         results = results[:10]
         
-        # Format results for ACE API compatibility
+        # Format results for ACE API compatibility with clean, readable output
         if results:
-            formatted_text = f"Found {len(results)} relevant code snippets:\n\n"
+            formatted_text = f"Found {len(results)} relevant snippets:\n\n"
             for i, result in enumerate(results, 1):
                 content = result['content']
+                file_path = result['file_path']
                 
-                # Clean up content: limit to 300 chars and break at line boundaries
-                if len(content) > 300:
-                    # Find last newline before 300 chars
-                    truncate_pos = content.rfind('\n', 0, 300)
+                # Limit to 200 chars and break at line boundaries
+                if len(content) > 200:
+                    truncate_pos = content.rfind('\n', 0, 200)
                     if truncate_pos == -1:
-                        truncate_pos = 300
+                        truncate_pos = 200
                     content = content[:truncate_pos].rstrip()
                 
-                # Remove excessive whitespace while preserving structure
-                lines = content.split('\n')
-                cleaned_lines = [line.rstrip() for line in lines]
-                content = '\n'.join(cleaned_lines)
+                # Clean whitespace and empty lines
+                lines = [line.rstrip() for line in content.split('\n') if line.strip()]
+                content = '\n'.join(lines)
                 
-                formatted_text += f"{i}. {result['file_path']}\n"
-                formatted_text += f"{'-' * 60}\n"
-                formatted_text += f"{content}\n"
-                formatted_text += f"{'-' * 60}\n\n"
+                # Format: Simple numbered list with file paths and clean code
+                formatted_text += f"{i}. {file_path}\n{content}\n\n"
         else:
-            formatted_text = "No relevant code found for your query."
+            formatted_text = "No relevant code found."
         
         return {
             "formatted_retrieval": formatted_text,
