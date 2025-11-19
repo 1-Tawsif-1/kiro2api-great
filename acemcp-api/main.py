@@ -53,13 +53,19 @@ API_TOKEN = os.getenv("ACE_API_TOKEN", "dev-token-change-me")
 class CodeBlob(BaseModel):
     """Code blob for indexing"""
     content: str
-    file_path: str
-    start_line: int
-    end_line: int
+    file_path: Optional[str] = None
+    path: Optional[str] = None  # acemcp uses 'path' instead of 'file_path'
+    start_line: Optional[int] = None
+    end_line: Optional[int] = None
     language: Optional[str] = None
     
     class Config:
         extra = "allow"  # Allow extra fields from acemcp client
+    
+    @property
+    def get_file_path(self) -> str:
+        """Get file path from either field name"""
+        return self.file_path or self.path or "unknown"
 
 
 class IndexRequest(BaseModel):
