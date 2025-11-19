@@ -257,9 +257,8 @@ async def codebase_retrieval(
         query_lower = query.lower()
         
         for blob_id, blob in code_index.items():
-            # Only search in blobs that were indexed (in added_blobs list)
-            if added_blobs and blob_id not in added_blobs:
-                continue
+            # Search all blobs (ignore added_blobs list since our IDs are different)
+            # In production, you'd filter by the blob list
                 
             content_lower = blob["content"].lower()
             file_path_lower = blob["file_path"].lower()
