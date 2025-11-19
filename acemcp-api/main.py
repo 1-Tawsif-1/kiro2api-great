@@ -178,18 +178,23 @@ async def index_code_impl(request: IndexRequest):
         # Index each blob
         indexed_count = 0
         for blob in request.blobs:
+            # Get file path (handle both 'path' and 'file_path')
+            file_path = blob.get_file_path
+            start_line = blob.start_line or 0
+            end_line = blob.end_line or 0
+            
             # Create unique ID for blob
             blob_id = hashlib.md5(
-                f"{project_id}:{blob.file_path}:{blob.start_line}".encode()
+                f"{project_id}:{file_path}:{start_line}".encode()
             ).hexdigest()
             
             # Store blob (in production, generate embeddings here)
             code_index[blob_id] = {
                 "project_id": project_id,
-                "file_path": blob.file_path,
+                "file_path": file_path,
                 "content": blob.content,
-                "start_line": blob.start_line,
-                "end_line": blob.end_line,
+                "start_line": start_line,
+                "end_line": end_line,
                 "language": blob.language,
                 "indexed_at": datetime.utcnow().isoformat(),
                 # In production, add: "embedding": model.encode(blob.content)
