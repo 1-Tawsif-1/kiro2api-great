@@ -234,6 +234,74 @@ async def index_code_impl(request: IndexRequest):
         raise HTTPException(status_code=500, detail=f"Indexing failed: {str(e)}")
 
 
+@app.post("/agents/codebase-retrieval")
+async def codebase_retrieval(
+    request: Request,
+    token: str = Depends(verify_token)
+):
+    """
+    ACE API compatible codebase retrieval endpoint
+    Expected by acemcp client for search
+    """
+    try:
+        body = await request.json()
+        query = body.get("information_request", "")
+        blobs_info = body.get("blobs", {})
+        added_blobs = blobs_info.get("added_blobs", [])
+        
+        if not query:
+            return {"formatted_retrieval": "No query provided"}
+        
+        # Search across all indexed code
+        results = []
+        query_lower = query.lower()
+        
+        for blob_id, blob in code_index.items():
+            # Only search in blobs that were indexed (in added_blobs list)
+            if added_blobs and blob_id not in added_blobs:
+                continue
+                
+            content_lower = blob["content"].lower()
+            file_path_lower = blob["file_path"].lower()
+            
+            # Calculate relevance score
+            score = 0.0
+            query_words = query_lower.split()
+            
+            for word in query_words:
+                if word in content_lower:
+                    score += content_lower.count(word) * 10
+                if word in file_path_lower:
+                    score += file_path_lower.count(word) * 5
+            
+            if score > 0:
+                results.append({
+                    "file_path": blob["file_path"],
+                    "content": blob["content"],
+                    "score": score
+                })
+        
+        # Sort by score and take top 10
+        results.sort(key=lambda x: x["score"], reverse=True)
+        results = results[:10]
+        
+        # Format results for ACE API compatibility
+        if results:
+            formatted_text = f"Found {len(results)} relevant code snippets:\n\n"
+            for i, result in enumerate(results, 1):
+                formatted_text += f"## {i}. {result['file_path']}\n\n```\n{result['content'][:500]}...\n```\n\n"
+        else:
+            formatted_text = "No relevant code found for your query."
+        
+        return {
+            "formatted_retrieval": formatted_text,
+            "results": results
+        }
+    except Exception as e:
+        logger.error(f"Codebase retrieval failed: {e}")
+        return {"formatted_retrieval": f"Error: {str(e)}"}
+
+
 @app.post("/api/v1/search")
 async def search_code(
     request: SearchRequest,
