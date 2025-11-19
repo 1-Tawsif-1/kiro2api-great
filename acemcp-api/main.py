@@ -39,6 +39,9 @@ class CodeBlob(BaseModel):
     start_line: int
     end_line: int
     language: Optional[str] = None
+    
+    class Config:
+        extra = "allow"  # Allow extra fields from acemcp client
 
 
 class IndexRequest(BaseModel):
@@ -46,6 +49,9 @@ class IndexRequest(BaseModel):
     project_id: str
     blobs: List[CodeBlob]
     batch_id: Optional[int] = None
+    
+    class Config:
+        extra = "allow"  # Allow extra fields from acemcp client
 
 
 class SearchRequest(BaseModel):
