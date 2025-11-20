@@ -14,10 +14,18 @@ import time
 from datetime import datetime
 import os
 import logging
+import sentry_sdk
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Initialize Sentry
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN"),
+    traces_sample_rate=1.0,
+    profiles_sample_rate=1.0,
+)
 
 app = FastAPI(title="Ace MCP API", version="1.0.0")
 

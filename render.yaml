@@ -11,3 +11,5 @@ services:
     envVars:
       - key: ACE_API_TOKEN
         generateValue: true
+      - key: SENTRY_DSN
+        value: https://9acbe7048dee09ecb8ac5c686863d500@o4510395858616320.ingest.us.sentry.io/4510396025077760
