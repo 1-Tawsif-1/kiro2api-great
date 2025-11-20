@@ -44,6 +44,17 @@ func StartServer(port string, authToken string, authService *auth.AuthService) {
 		c.File("./static/index.html")
 	})
 
+	// Health check endpoint - for UptimeRobot monitoring
+	r.GET("/health", func(c *gin.Context) {
+		logger.Info("⏰ Health check ping received",
+			logger.String("user_agent", c.GetHeader("User-Agent")),
+			logger.String("ip", c.ClientIP()))
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "healthy",
+			"service": "kiro2api",
+		})
+	})
+
 	// API端点 - 纯数据服务
 	r.GET("/api/tokens", handleTokenPoolAPI)
 
@@ -230,6 +241,7 @@ func StartServer(port string, authToken string, authService *auth.AuthService) {
 	logger.Info("可用端点:")
 	logger.Info("  GET  /                          - 重定向到静态Dashboard")
 	logger.Info("  GET  /static/*                  - 静态资源服务")
+	logger.Info("  GET  /health                    - 健康检查 (UptimeRobot)")
 	logger.Info("  GET  /api/tokens                - Token池状态API")
 	logger.Info("  GET  /v1/models                 - 模型列表")
 	logger.Info("  POST /v1/messages               - Anthropic API代理")
