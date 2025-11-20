@@ -133,6 +133,7 @@ async def health(request: Request):
     
     return {
         "status": "healthy",
+        "service": "kiro2api",
         "indexed_projects": len(projects),
         "total_blobs": len(code_index),
         "timestamp": datetime.utcnow().isoformat()
